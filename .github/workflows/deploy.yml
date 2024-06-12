@@ -1,0 +1,28 @@
+name: Deploy to S3
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  FROM_BUCKET: app-s3-build
+  TO_BUCKET: app-s3.codesoom.shop
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure AWS Credentials 2
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+      - name: Upload
+        run: |
+          HASH=$(grep 'HASH=' VERSION | cut -d'=' -f2)
+          aws s3 sync s3://$FROM_BUCKET/$HASH s3://$TO_BUCKET/ --exclude "*.html"
+          aws s3 sync s3://$FROM_BUCKET/$HASH s3://$TO_BUCKET/ --exclude "*" --include "*.html" --cache-control "no-store"
